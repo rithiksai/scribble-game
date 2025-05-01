@@ -14,7 +14,7 @@ export const SocketProvider = ({ children }) => {
   
   useEffect(() => {
     // Create socket connection
-    const SOCKET_SERVER = 'http://localhost:5000';
+    const SOCKET_SERVER = process.env.REACT_APP_SOCKET_SERVER || 'http://localhost:5000';
     const newSocket = io(SOCKET_SERVER, {
       autoConnect: true,
       reconnection: true
