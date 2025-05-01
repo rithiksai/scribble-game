@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import DrawingCanvas from '../components/DrawingCanvas';
 import ChatBox from '../components/ChatBox';
+import WordHint from '../components/WordHint';
 
 function GameRoom() {
   const { roomId } = useParams();
@@ -66,6 +67,32 @@ function GameRoom() {
     socket.on('room-joined', (data) => {
       setPlayers(data.players);
       console.log('Joined room: ', data);
+      
+      // Handle joining in the middle of a game
+      if (data.isActive) {
+        setGameStatus('playing');
+        setTimeLeft(data.timeLeft);
+        setIsDrawer(data.currentDrawer === socket.id);
+        
+        // Create placeholder for word length if not drawer
+        if (data.currentDrawer !== socket.id && data.wordLength) {
+          setCurrentWord('_'.repeat(data.wordLength));
+          
+          // Show notification for late joiners
+          const notification = {
+            type: 'system',
+            content: 'You joined in the middle of a round. You can guess the word or wait for the next round.'
+          };
+          
+          // Use setTimeout to ensure message appears after component renders
+          setTimeout(() => {
+            socket.emit('system-message', { 
+              roomId: data.roomId, 
+              message: `${localStorage.getItem('username')} joined in the middle of a round.` 
+            });
+          }, 500);
+        }
+      }
     });
     
     // Handle player joined event
@@ -75,9 +102,10 @@ function GameRoom() {
     
     // Handle player left event
     socket.on('player-left', (data) => {
-      setPlayers(prev => prev.filter(player => player.id !== data.playerId));
+    console.log('Player left:', data.playerId);
+    setPlayers(prev => prev.filter(player => player.id !== data.playerId));
     });
-    
+
     // Handle drawer selection
     socket.on('select-drawer', (data) => {
       setIsDrawer(data.drawerId === socket.id);
@@ -87,7 +115,12 @@ function GameRoom() {
       if (data.drawerId === socket.id && data.word) {
         setCurrentWord(data.word);
       } else {
-        setCurrentWord(''); // Clear word for guessers
+        // For non-drawers, create placeholder based on word length
+        if (data.wordLength) {
+          setCurrentWord('_'.repeat(data.wordLength));
+        } else {
+          setCurrentWord('');
+        }
       }
     });
     
@@ -149,10 +182,11 @@ function GameRoom() {
             <div className="timer">Time left: {formatTime(timeLeft)}</div>
           )}
           
-          {isDrawer && currentWord && (
-            <div className="current-word">
-              Your word: <strong>{currentWord}</strong>
-            </div>
+          {gameStatus === 'playing' && (
+            <WordHint 
+              word={currentWord} 
+              isDrawer={isDrawer} 
+            />
           )}
           
           {gameStatus === 'waiting' && currentWord && (

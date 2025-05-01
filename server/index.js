@@ -75,7 +75,8 @@ function startNewRound(roomId) {
   // Notify clients about the new drawer
   io.to(roomId).emit('select-drawer', {
     drawerId: drawer.id,
-    drawerUsername: drawer.username
+    drawerUsername: drawer.username,
+    wordLength: word.length  // Add word length for guessers
   });
   
   // Send the word only to the drawer
@@ -155,9 +156,13 @@ io.on('connection', (socket) => {
     // Notify player they joined successfully
     socket.emit('room-joined', { 
       roomId, 
-      players: rooms[roomId].players 
+      players: rooms[roomId].players,
+      isActive: rooms[roomId].isActive,
+      currentDrawer: rooms[roomId].isActive ? rooms[roomId].players[rooms[roomId].currentDrawerIndex]?.id : null,
+      timeLeft: rooms[roomId].roundTime || 0,
+      wordLength: rooms[roomId].currentWord?.length || 0
     });
-    
+
     // Notify other players in the room
     socket.to(roomId).emit('player-joined', {
       playerId: socket.id,
@@ -245,15 +250,19 @@ io.on('connection', (socket) => {
     // Get username
     const username = getPlayerUsername(roomId, socket.id);
     
+    // Check if guess is correct
+    const isCorrect = guess.toLowerCase() === room.currentWord.toLowerCase();
+    
     // Broadcast the guess to all players
     io.to(roomId).emit('player-guess', {
       playerId: socket.id,
       username,
-      guess
+      guess,
+      isCorrect
     });
     
-    // Check if guess is correct
-    if (guess.toLowerCase() === room.currentWord.toLowerCase()) {
+    // If guess is correct
+    if (isCorrect) {
       // Calculate score based on time left
       const scoreGained = Math.ceil(room.roundTime * 10);
       
@@ -274,6 +283,16 @@ io.on('connection', (socket) => {
       
       // End this round
       endRound(roomId);
+    }
+  });
+
+  // Handle system messages from clients
+  socket.on('system-message', (data) => {
+    const { roomId, message } = data;
+    
+    if (roomId && rooms[roomId]) {
+      // Broadcast the system message to all users in the room
+      io.to(roomId).emit('system-message', { message });
     }
   });
   

@@ -14,8 +14,11 @@ const ChatBox = ({ roomId, isDrawer }) => {
     
     // Listen for player guesses
     socket.on('player-guess', (data) => {
-      const { username, guess } = data;
-      addMessage('guess', username, guess);
+      const { username, guess, isCorrect } = data;
+      // Only add incorrect guesses to chat
+      if (!isCorrect) {
+        addMessage('guess', username, guess);
+      }
     });
     
     // Listen for system messages

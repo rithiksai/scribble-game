@@ -34,7 +34,7 @@ const DrawingCanvas = ({ roomId, isDrawer }) => {
     context.lineWidth = brushSize;
   }, [color, brushSize]);
   
-  // Handle Socket.io events
+  // Set up Socket.io events
   useEffect(() => {
     if (!socket) return;
     
@@ -55,9 +55,20 @@ const DrawingCanvas = ({ roomId, isDrawer }) => {
       context.stroke();
     });
     
+    // Listen for clear canvas command
+    socket.on('clear-canvas', () => {
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      // Clear the canvas
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    });
+    
     // Clean up on component unmount
     return () => {
       socket.off('draw-line');
+      socket.off('clear-canvas');
     };
   }, [socket]);
   
