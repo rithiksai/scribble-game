@@ -13,14 +13,14 @@ app.use(express.json());
 // Create HTTP server with Express
 const server = http.createServer(app);
 
-// Set up Socket.io with CORS
+
+
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:3000', // Your React app URL
-    methods: ['GET', 'POST']
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    methods: ["GET", "POST"]
   }
-});
-
+}); 
 // Sample words for the game
 const words = [
   'apple', 'banana', 'car', 'dog', 'elephant', 'fish', 'guitar', 'house',
