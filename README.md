@@ -1,6 +1,5 @@
 # Skribbl.in - Multiplayer Drawing & Guessing Game
 
-![Skribbl.in Logo](link-to-your-logo-if-you-have-one)
 
 **Live Demo:** [https://skribbl.in](https://skribbl.in)
 
